@@ -1,35 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Teachable IdeaSense</title>
 
 <style>
 
 body{
-    font-family:Arial;
+    font-family:Arial,sans-serif;
     text-align:center;
     max-width:900px;
     margin:auto;
+    padding:20px;
+}
+
+input{
+    width:70%;
+    padding:10px;
+}
+
+button{
+    padding:10px 20px;
+    margin:10px;
+    cursor:pointer;
 }
 
 #canvas-container{
     margin-top:20px;
 }
 
-button{
-    padding:10px;
-    margin:10px;
-}
-
-input{
-    width:500px;
-    padding:8px;
+canvas{
+    border:1px solid #ccc;
+    border-radius:10px;
 }
 
 .estado{
-    font-size:20px;
-    margin:15px;
+    margin-top:20px;
+    font-size:1.3em;
 }
 
 </style>
@@ -41,10 +52,13 @@ input{
 
 <body>
 
-<h1>Teachable IdeaSense</h1>
+<h1>🤖 Teachable IdeaSense</h1>
 
-<input id="modelURL"
+<input
+id="modelURL"
 placeholder="https://teachablemachine.withgoogle.com/models/xxxxx/">
+
+<br>
 
 <button onclick="cargarModelo()">
 Cargar Modelo
@@ -56,11 +70,15 @@ Conectar IdeaBoard
 
 <div id="canvas-container"></div>
 
-<div class="estado" id="prediccion">
-Esperando modelo...
+<div class="estado" id="estadoModelo">
+Modelo no cargado
 </div>
 
-<div class="estado" id="ble">
+<div class="estado" id="prediccion">
+Clase: ---
+</div>
+
+<div class="estado" id="estadoBLE">
 Bluetooth desconectado
 </div>
 
@@ -68,85 +86,164 @@ Bluetooth desconectado
 
 let model;
 let webcam;
-let dispositivo;
-let caracteristica;
+let maxPredictions;
 
-let ultimaClase="";
+let bleCharacteristic = null;
+
+let ultimaClase = "";
+let enviando = false;
+
+
+//===================================================
+// CARGAR MODELO
+//===================================================
 
 async function cargarModelo(){
 
     try{
 
-        const base=document.getElementById("modelURL").value;
+        const base =
+            document.getElementById("modelURL")
+            .value.trim();
 
-        const modelURL=base+"model.json";
-        const metadataURL=base+"metadata.json";
+        if(base===""){
+            alert("Debe ingresar una URL");
+            return;
+        }
 
-        model=await tmImage.load(modelURL,metadataURL);
+        let url = base;
 
-        webcam=new tmImage.Webcam(400,300,true);
+        if(!url.endsWith("/"))
+            url += "/";
+
+        const modelURL = url + "model.json";
+        const metadataURL = url + "metadata.json";
+
+        document.getElementById("estadoModelo")
+            .innerHTML = "Cargando modelo...";
+
+        model = await tmImage.load(
+            modelURL,
+            metadataURL
+        );
+
+        maxPredictions =
+            model.getTotalClasses();
+
+        webcam =
+            new tmImage.Webcam(
+                400,
+                300,
+                true
+            );
 
         await webcam.setup();
+
         await webcam.play();
+
+        document
+            .getElementById("canvas-container")
+            .innerHTML = "";
 
         document
             .getElementById("canvas-container")
             .appendChild(webcam.canvas);
 
-        loop();
+        document.getElementById("estadoModelo")
+            .innerHTML = "✅ Modelo cargado";
 
-    }catch(e){
+        window.requestAnimationFrame(loop);
 
-        alert("No se pudo cargar el modelo");
+    }
+    catch(error){
 
-        console.log(e);
+        console.error(error);
+
+        document.getElementById("estadoModelo")
+            .innerHTML =
+            "❌ Error cargando modelo";
+
+        alert(
+            "No fue posible cargar el modelo.\n\n" +
+            "Revise la consola (F12)."
+        );
 
     }
 
 }
+
+
+//===================================================
+// LOOP PRINCIPAL
+//===================================================
 
 async function loop(){
 
     webcam.update();
 
-    const predicciones=
+    await predecir();
+
+    window.requestAnimationFrame(loop);
+
+}
+
+
+//===================================================
+// PREDICCIÓN
+//===================================================
+
+async function predecir(){
+
+    if(!model) return;
+
+    const prediction =
         await model.predict(webcam.canvas);
 
-    let mejor="";
-    let score=0;
+    let mejorClase = "";
+    let mejorProb = 0;
 
-    for(let p of predicciones){
+    for(let p of prediction){
 
-        if(p.probability>score){
+        if(p.probability > mejorProb){
 
-            mejor=p.className;
-            score=p.probability;
+            mejorProb = p.probability;
+            mejorClase = p.className;
 
         }
 
     }
 
-    document.getElementById("prediccion").innerHTML=
-        `Clase: ${mejor}<br>
-        Confianza: ${(score*100).toFixed(1)} %`;
+    document.getElementById("prediccion")
+        .innerHTML =
+        `Clase: <b>${mejorClase}</b><br>
+         Confianza:
+         ${(mejorProb*100).toFixed(1)}%`;
 
-    if(mejor!==ultimaClase){
+    // Solo enviar si cambia
 
-        ultimaClase=mejor;
+    if(
+        mejorClase !== ultimaClase &&
+        mejorProb > 0.80
+    ){
 
-        enviarBLE(mejor);
+        ultimaClase = mejorClase;
+
+        enviarBLE(mejorClase);
 
     }
 
-    requestAnimationFrame(loop);
-
 }
+
+
+//===================================================
+// BLUETOOTH
+//===================================================
 
 async function conectarBLE(){
 
     try{
 
-        dispositivo=
+        const device =
             await navigator.bluetooth.requestDevice({
 
                 acceptAllDevices:true,
@@ -157,54 +254,72 @@ async function conectarBLE(){
 
             });
 
-        const servidor=
-            await dispositivo.gatt.connect();
+        const server =
+            await device.gatt.connect();
 
-        const servicio=
-            await servidor.getPrimaryService(
+        const service =
+            await server.getPrimaryService(
                 '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
             );
 
-        caracteristica=
-            await servicio.getCharacteristic(
+        bleCharacteristic =
+            await service.getCharacteristic(
                 '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
             );
 
-        document.getElementById("ble").innerHTML=
-            "Bluetooth conectado";
+        document.getElementById("estadoBLE")
+            .innerHTML =
+            "✅ IdeaBoard conectada";
 
     }
 
-    catch(e){
+    catch(error){
 
-        console.log(e);
+        console.error(error);
 
-        alert("No fue posible conectar");
+        alert(
+            "No se pudo conectar vía Bluetooth"
+        );
 
     }
 
 }
 
+
+//===================================================
+// ENVIAR BLE
+//===================================================
+
 async function enviarBLE(texto){
 
-    if(!caracteristica)
+    if(!bleCharacteristic)
+        return;
+
+    if(enviando)
         return;
 
     try{
 
-        let encoder=new TextEncoder();
+        enviando = true;
 
-        await caracteristica.writeValue(
-            encoder.encode(texto+"\n")
+        const encoder =
+            new TextEncoder();
+
+        await bleCharacteristic.writeValue(
+            encoder.encode(texto + "\n")
         );
 
-    }
-
-    catch(e){
-
-        console.log(e);
+        console.log("Enviado:", texto);
 
     }
+
+    catch(error){
+
+        console.log(error);
+
+    }
+
+    enviando = false;
 
 }
 
