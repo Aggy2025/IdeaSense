@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teachable IdeaSense</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            max-width:800px;
+            margin:auto;
+            text-align:center;
+            padding:20px;
+        }
+
+        input{
+            width:500px;
+            padding:10px;
+        }
+
+        button{
+            padding:10px 20px;
+            margin:10px;
+        }
+
+        video{
+            border:1px solid gray;
+            border-radius:10px;
+        }
+
+        #resultado{
+            font-size:2em;
+            margin-top:20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Teachable IdeaSense</h1>
+
+    <h3>Pega la URL del modelo de Teachable Machine</h3>
+
+    <input
+        id="modelURL"
+        placeholder="https://teachablemachine.withgoogle.com/models/xxxx/"
+    >
+
+    <br>
+
+    <button onclick="cargarModelo()">
+        Cargar Modelo
+    </button>
+
+    <hr>
+
+    <video
+        id="webcam"
+        width="400"
+        height="300"
+        autoplay
+        playsinline>
+    </video>
+
+    <div id="resultado">
+
+        Clase: ---
+        <br>
+        Confianza: ---
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
+    <script>
+
+        let model;
+        let webcam;
+
+        async function cargarModelo(){
+
+            const urlBase =
+                document.getElementById("modelURL").value;
+
+            const modelURL = urlBase + "model.json";
+            const metadataURL = urlBase + "metadata.json";
+
+            model = await tmImage.load(
+                modelURL,
+                metadataURL
+            );
+
+            iniciarCamara();
+        }
+
+
+        async function iniciarCamara(){
+
+            webcam = new tmImage.Webcam(
+                400,
+                300,
+                true
+            );
+
+            await webcam.setup();
+
+            await webcam.play();
+
+            document
+                .getElementById("webcam")
+                .srcObject = webcam.webcam;
+
+            window.requestAnimationFrame(loop);
+        }
+
+
+        async function loop(){
+
+            webcam.update();
+
+            await predecir();
+
+            window.requestAnimationFrame(loop);
+        }
+
+
+        async function predecir(){
+
+            const prediction =
+                await model.predict(webcam.canvas);
+
+            let mejorClase = "";
+            let mejorScore = 0;
+
+            for(let p of prediction){
+
+                if(p.probability > mejorScore){
+
+                    mejorClase = p.className;
+                    mejorScore = p.probability;
+
+                }
+            }
+
+            document.getElementById("resultado").innerHTML =
+                `
+                Clase: <b>${mejorClase}</b>
+                <br>
+                Confianza: ${(mejorScore*100).toFixed(1)}%
+                `;
+        }
+
+    </script>
+
+</body>
+</html>
