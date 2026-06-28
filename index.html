@@ -1,158 +1,214 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Teachable IdeaSense</title>
+<meta charset="UTF-8">
+<title>Teachable IdeaSense</title>
 
-    <style>
-        body{
-            font-family: Arial;
-            max-width:800px;
-            margin:auto;
-            text-align:center;
-            padding:20px;
-        }
+<style>
 
-        input{
-            width:500px;
-            padding:10px;
-        }
+body{
+    font-family:Arial;
+    text-align:center;
+    max-width:900px;
+    margin:auto;
+}
 
-        button{
-            padding:10px 20px;
-            margin:10px;
-        }
+#canvas-container{
+    margin-top:20px;
+}
 
-        video{
-            border:1px solid gray;
-            border-radius:10px;
-        }
+button{
+    padding:10px;
+    margin:10px;
+}
 
-        #resultado{
-            font-size:2em;
-            margin-top:20px;
-        }
-    </style>
+input{
+    width:500px;
+    padding:8px;
+}
+
+.estado{
+    font-size:20px;
+    margin:15px;
+}
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
 </head>
 
 <body>
 
-    <h1>Teachable IdeaSense</h1>
+<h1>Teachable IdeaSense</h1>
 
-    <h3>Pega la URL del modelo de Teachable Machine</h3>
+<input id="modelURL"
+placeholder="https://teachablemachine.withgoogle.com/models/xxxxx/">
 
-    <input
-        id="modelURL"
-        placeholder="https://teachablemachine.withgoogle.com/models/xxxx/"
-    >
+<button onclick="cargarModelo()">
+Cargar Modelo
+</button>
 
-    <br>
+<button onclick="conectarBLE()">
+Conectar IdeaBoard
+</button>
 
-    <button onclick="cargarModelo()">
-        Cargar Modelo
-    </button>
+<div id="canvas-container"></div>
 
-    <hr>
+<div class="estado" id="prediccion">
+Esperando modelo...
+</div>
 
-    <video
-        id="webcam"
-        width="400"
-        height="300"
-        autoplay
-        playsinline>
-    </video>
+<div class="estado" id="ble">
+Bluetooth desconectado
+</div>
 
-    <div id="resultado">
+<script>
 
-        Clase: ---
-        <br>
-        Confianza: ---
+let model;
+let webcam;
+let dispositivo;
+let caracteristica;
 
-    </div>
+let ultimaClase="";
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+async function cargarModelo(){
 
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+    try{
 
-    <script>
+        const base=document.getElementById("modelURL").value;
 
-        let model;
-        let webcam;
+        const modelURL=base+"model.json";
+        const metadataURL=base+"metadata.json";
 
-        async function cargarModelo(){
+        model=await tmImage.load(modelURL,metadataURL);
 
-            const urlBase =
-                document.getElementById("modelURL").value;
+        webcam=new tmImage.Webcam(400,300,true);
 
-            const modelURL = urlBase + "model.json";
-            const metadataURL = urlBase + "metadata.json";
+        await webcam.setup();
+        await webcam.play();
 
-            model = await tmImage.load(
-                modelURL,
-                metadataURL
+        document
+            .getElementById("canvas-container")
+            .appendChild(webcam.canvas);
+
+        loop();
+
+    }catch(e){
+
+        alert("No se pudo cargar el modelo");
+
+        console.log(e);
+
+    }
+
+}
+
+async function loop(){
+
+    webcam.update();
+
+    const predicciones=
+        await model.predict(webcam.canvas);
+
+    let mejor="";
+    let score=0;
+
+    for(let p of predicciones){
+
+        if(p.probability>score){
+
+            mejor=p.className;
+            score=p.probability;
+
+        }
+
+    }
+
+    document.getElementById("prediccion").innerHTML=
+        `Clase: ${mejor}<br>
+        Confianza: ${(score*100).toFixed(1)} %`;
+
+    if(mejor!==ultimaClase){
+
+        ultimaClase=mejor;
+
+        enviarBLE(mejor);
+
+    }
+
+    requestAnimationFrame(loop);
+
+}
+
+async function conectarBLE(){
+
+    try{
+
+        dispositivo=
+            await navigator.bluetooth.requestDevice({
+
+                acceptAllDevices:true,
+
+                optionalServices:[
+                    '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
+                ]
+
+            });
+
+        const servidor=
+            await dispositivo.gatt.connect();
+
+        const servicio=
+            await servidor.getPrimaryService(
+                '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
             );
 
-            iniciarCamara();
-        }
-
-
-        async function iniciarCamara(){
-
-            webcam = new tmImage.Webcam(
-                400,
-                300,
-                true
+        caracteristica=
+            await servicio.getCharacteristic(
+                '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
             );
 
-            await webcam.setup();
+        document.getElementById("ble").innerHTML=
+            "Bluetooth conectado";
 
-            await webcam.play();
+    }
 
-            document
-                .getElementById("webcam")
-                .srcObject = webcam.webcam;
+    catch(e){
 
-            window.requestAnimationFrame(loop);
-        }
+        console.log(e);
 
+        alert("No fue posible conectar");
 
-        async function loop(){
+    }
 
-            webcam.update();
+}
 
-            await predecir();
+async function enviarBLE(texto){
 
-            window.requestAnimationFrame(loop);
-        }
+    if(!caracteristica)
+        return;
 
+    try{
 
-        async function predecir(){
+        let encoder=new TextEncoder();
 
-            const prediction =
-                await model.predict(webcam.canvas);
+        await caracteristica.writeValue(
+            encoder.encode(texto+"\n")
+        );
 
-            let mejorClase = "";
-            let mejorScore = 0;
+    }
 
-            for(let p of prediction){
+    catch(e){
 
-                if(p.probability > mejorScore){
+        console.log(e);
 
-                    mejorClase = p.className;
-                    mejorScore = p.probability;
+    }
 
-                }
-            }
+}
 
-            document.getElementById("resultado").innerHTML =
-                `
-                Clase: <b>${mejorClase}</b>
-                <br>
-                Confianza: ${(mejorScore*100).toFixed(1)}%
-                `;
-        }
-
-    </script>
+</script>
 
 </body>
 </html>
