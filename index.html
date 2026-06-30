@@ -1,52 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable IdeaSense</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
-<title>Teachable IdeaSense</title>
+    <style>
 
-<style>
+        body{
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: auto;
+            text-align: center;
+            padding: 20px;
+        }
 
-body{
-    font-family:Arial,sans-serif;
-    text-align:center;
-    max-width:900px;
-    margin:auto;
-    padding:20px;
-}
+        h1{
+            color:#333;
+        }
 
-input{
-    width:70%;
-    padding:10px;
-}
+        input{
+            width:80%;
+            max-width:600px;
+            padding:10px;
+            font-size:16px;
+        }
 
-button{
-    padding:10px 20px;
-    margin:10px;
-    cursor:pointer;
-}
+        button{
+            padding:10px 20px;
+            margin:10px;
+            font-size:16px;
+            cursor:pointer;
+        }
 
-#canvas-container{
-    margin-top:20px;
-}
+        #webcam-container{
+            margin-top:20px;
+        }
 
-canvas{
-    border:1px solid #ccc;
-    border-radius:10px;
-}
+        canvas{
+            border:1px solid #ccc;
+            border-radius:10px;
+        }
 
-.estado{
-    margin-top:20px;
-    font-size:1.3em;
-}
+        .card{
+            border:1px solid #ddd;
+            border-radius:10px;
+            padding:15px;
+            margin-top:15px;
+        }
 
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+    </style>
 
 </head>
 
@@ -54,147 +60,134 @@ canvas{
 
 <h1>🤖 Teachable IdeaSense</h1>
 
+<p>Pega la URL del modelo exportado desde Teachable Machine</p>
+
 <input
-id="modelURL"
-placeholder="https://teachablemachine.withgoogle.com/models/xxxxx/">
+    id="modelURL"
+    value="https://teachablemachine.withgoogle.com/models/8PFBVe19l/"
+>
 
 <br>
 
 <button onclick="cargarModelo()">
-Cargar Modelo
+    Cargar Modelo
 </button>
 
 <button onclick="conectarBLE()">
-Conectar IdeaBoard
+    Conectar IdeaBoard
 </button>
 
-<div id="canvas-container"></div>
-
-<div class="estado" id="estadoModelo">
-Modelo no cargado
+<div class="card">
+    <h3>Estado del modelo</h3>
+    <div id="estadoModelo">
+        Modelo no cargado
+    </div>
 </div>
 
-<div class="estado" id="prediccion">
-Clase: ---
+<div id="webcam-container"></div>
+
+<div class="card">
+    <h3>Predicción</h3>
+    <div id="resultado">
+        ---
+    </div>
 </div>
 
-<div class="estado" id="estadoBLE">
-Bluetooth desconectado
+<div class="card">
+    <h3>Bluetooth</h3>
+    <div id="estadoBLE">
+        Desconectado
+    </div>
 </div>
 
 <script>
 
 let model;
 let webcam;
-let maxPredictions;
-
 let bleCharacteristic = null;
 
 let ultimaClase = "";
-let enviando = false;
 
 
-//===================================================
+//==================================================
 // CARGAR MODELO
-//===================================================
+//==================================================
 
 async function cargarModelo(){
 
     try{
 
-        const base =
+        document.getElementById("estadoModelo").innerHTML =
+            "Cargando modelo...";
+
+        let baseURL =
             document.getElementById("modelURL")
-            .value.trim();
+            .value
+            .trim();
 
-        if(base===""){
-            alert("Debe ingresar una URL");
-            return;
-        }
+        // Limpia barras finales extra
+        baseURL = baseURL.replace(/\/+$/, "");
 
-        let url = base;
+        const modelURL = baseURL + "/model.json";
+        const metadataURL = baseURL + "/metadata.json";
 
-        if(!url.endsWith("/"))
-            url += "/";
-
-        const modelURL = url + "model.json";
-        const metadataURL = url + "metadata.json";
-
-        document.getElementById("estadoModelo")
-            .innerHTML = "Cargando modelo...";
+        console.log(modelURL);
+        console.log(metadataURL);
 
         model = await tmImage.load(
             modelURL,
             metadataURL
         );
 
-        maxPredictions =
-            model.getTotalClasses();
+        document.getElementById("estadoModelo").innerHTML =
+            "✅ Modelo cargado correctamente";
 
-        webcam =
-            new tmImage.Webcam(
-                400,
-                300,
-                true
-            );
+        if(webcam){
+            await webcam.stop();
+        }
+
+        webcam = new tmImage.Webcam(400, 300, true);
 
         await webcam.setup();
-
         await webcam.play();
 
-        document
-            .getElementById("canvas-container")
-            .innerHTML = "";
+        const contenedor =
+            document.getElementById("webcam-container");
 
-        document
-            .getElementById("canvas-container")
-            .appendChild(webcam.canvas);
+        contenedor.innerHTML = "";
+        contenedor.appendChild(webcam.canvas);
 
-        document.getElementById("estadoModelo")
-            .innerHTML = "✅ Modelo cargado";
-
-        window.requestAnimationFrame(loop);
+        requestAnimationFrame(loop);
 
     }
+
     catch(error){
 
         console.error(error);
 
-        document.getElementById("estadoModelo")
-            .innerHTML =
+        document.getElementById("estadoModelo").innerHTML =
             "❌ Error cargando modelo";
 
         alert(
-            "No fue posible cargar el modelo.\n\n" +
-            "Revise la consola (F12)."
+            "Error:\n\n" +
+            error.message +
+            "\n\nRevise la consola (F12)"
         );
-
     }
 
 }
 
 
-//===================================================
+//==================================================
 // LOOP PRINCIPAL
-//===================================================
+//==================================================
 
 async function loop(){
 
+    if(!webcam || !model)
+        return;
+
     webcam.update();
-
-    await predecir();
-
-    window.requestAnimationFrame(loop);
-
-}
-
-
-//===================================================
-// PREDICCIÓN
-//===================================================
-
-async function predecir(){
-
-    if(!model) return;
 
     const prediction =
         await model.predict(webcam.canvas);
@@ -210,16 +203,13 @@ async function predecir(){
             mejorClase = p.className;
 
         }
-
     }
 
-    document.getElementById("prediccion")
-        .innerHTML =
-        `Clase: <b>${mejorClase}</b><br>
-         Confianza:
-         ${(mejorProb*100).toFixed(1)}%`;
-
-    // Solo enviar si cambia
+    document.getElementById("resultado").innerHTML =
+        `
+        Clase: <b>${mejorClase}</b><br>
+        Confianza: ${(mejorProb*100).toFixed(1)} %
+        `;
 
     if(
         mejorClase !== ultimaClase &&
@@ -229,17 +219,27 @@ async function predecir(){
         ultimaClase = mejorClase;
 
         enviarBLE(mejorClase);
-
     }
 
+    requestAnimationFrame(loop);
 }
 
 
-//===================================================
-// BLUETOOTH
-//===================================================
+
+//==================================================
+// CONECTAR BLUETOOTH
+//==================================================
 
 async function conectarBLE(){
+
+    if(!navigator.bluetooth){
+
+        alert(
+            "Este navegador no soporta Web Bluetooth.\n\nUsa Chrome o Edge."
+        );
+
+        return;
+    }
 
     try{
 
@@ -267,8 +267,7 @@ async function conectarBLE(){
                 '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
             );
 
-        document.getElementById("estadoBLE")
-            .innerHTML =
+        document.getElementById("estadoBLE").innerHTML =
             "✅ IdeaBoard conectada";
 
     }
@@ -277,49 +276,41 @@ async function conectarBLE(){
 
         console.error(error);
 
-        alert(
-            "No se pudo conectar vía Bluetooth"
-        );
+        document.getElementById("estadoBLE").innerHTML =
+            "❌ Error Bluetooth";
 
+        alert(error.message);
     }
 
 }
 
 
-//===================================================
-// ENVIAR BLE
-//===================================================
+
+//==================================================
+// ENVIAR DATOS BLE
+//==================================================
 
 async function enviarBLE(texto){
 
     if(!bleCharacteristic)
         return;
 
-    if(enviando)
-        return;
-
     try{
 
-        enviando = true;
-
-        const encoder =
-            new TextEncoder();
+        const encoder = new TextEncoder();
 
         await bleCharacteristic.writeValue(
             encoder.encode(texto + "\n")
         );
 
-        console.log("Enviado:", texto);
+        console.log("BLE:", texto);
 
     }
 
     catch(error){
 
         console.log(error);
-
     }
-
-    enviando = false;
 
 }
 
