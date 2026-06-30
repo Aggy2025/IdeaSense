@@ -2,17 +2,12 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Teachable IdeaSense</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
         rel="stylesheet">
@@ -23,255 +18,140 @@
         }
 
         body {
-
             margin: 0;
             min-height: 100vh;
-
             font-family: 'Poppins', sans-serif;
-
-            background:
-                linear-gradient(135deg,
-                    #0f172a,
-                    #1e293b,
-                    #2563eb);
-
+            background: linear-gradient(135deg, #0f172a, #1e3a8a, #2563eb);
             color: white;
         }
 
         .container {
-
-            max-width: 1200px;
+            max-width: 1100px;
             margin: auto;
             padding: 30px;
-
         }
 
-        .hero {
-
+        h1 {
             text-align: center;
-            margin-bottom: 30px;
-
-        }
-
-        .hero h1 {
-
             font-size: 3rem;
             margin-bottom: 10px;
-
         }
 
-        .hero p {
-
+        .subtitle {
+            text-align: center;
             opacity: .8;
-
-        }
-
-        .grid {
-
-            display: grid;
-            gap: 25px;
-
-            grid-template-columns:
-                repeat(auto-fit, minmax(350px, 1fr));
-
+            margin-bottom: 40px;
         }
 
         .card {
-
-            background: rgba(255, 255, 255, .1);
-
+            background: rgba(255,255,255,.1);
             backdrop-filter: blur(15px);
-
             border-radius: 25px;
-
             padding: 25px;
-
-            box-shadow:
-                0 10px 30px rgba(0, 0, 0, .2);
-
-        }
-
-        h2 {
-
-            margin-top: 0;
-
+            margin-bottom: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
         }
 
         input {
-
             width: 100%;
-
             padding: 15px;
-
             border: none;
-
             border-radius: 15px;
-
             font-size: 16px;
-
-            margin-top: 10px;
-
         }
 
         button {
-
             margin-top: 15px;
-
-            padding: 15px 25px;
-
+            padding: 15px 30px;
             border: none;
-
             border-radius: 15px;
-
             background: white;
-
             color: #2563eb;
-
             font-size: 16px;
-
             font-weight: bold;
-
             cursor: pointer;
-
-            transition: .3s;
         }
 
         button:hover {
-
-            transform: translateY(-3px);
-
+            transform: translateY(-2px);
         }
 
         #webcam-container {
-
             display: flex;
             justify-content: center;
-            margin-top: 15px;
-
+            margin-top: 20px;
         }
 
         canvas {
-
             border-radius: 20px;
             max-width: 100%;
-
         }
 
         .prediction {
-
             text-align: center;
-            margin-top: 20px;
-
         }
 
-        .emoji {
-
-            font-size: 5rem;
-
-        }
-
-        .class-name {
-
-            font-size: 2.2rem;
-            font-weight: bold;
-
+        .prediction h2 {
+            font-size: 3rem;
+            margin: 10px 0;
         }
 
         .confidence {
-
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             opacity: .8;
-
         }
 
         .status {
-
             margin-top: 15px;
             font-size: 1.1rem;
         }
 
-        .dot {
-
-            display: inline-block;
-
-            width: 12px;
-            height: 12px;
-
-            border-radius: 50%;
-            margin-right: 10px;
-
-            background: orange;
-
-        }
-
-        .green {
-
-            background: #00e676;
-
-        }
-
-        .red {
-
-            background: #ff5252;
-
-        }
     </style>
-
 </head>
 
 <body>
 
     <div class="container">
 
-        <div class="hero">
+        <h1>🤖 Teachable IdeaSense</h1>
 
-            <h1>🤖 Teachable IdeaSense</h1>
+        <p class="subtitle">
+            Conecta Teachable Machine con tu IdeaBoard
+        </p>
 
-            <p>
-                Entrena un modelo con Teachable Machine y llévalo al mundo físico.
-            </p>
+        <div class="card">
 
-        </div>
+            <h2>📦 Modelo</h2>
 
-        <div class="grid">
+            <input id="modelURL"
+                value="https://teachablemachine.withgoogle.com/models/8PFBVe19l/"
+                placeholder="Pega aquí la URL del modelo">
 
-            <div class="card">
+            <button onclick="cargarModelo()">
+                Cargar Modelo
+            </button>
 
-                <h2>📦 Modelo</h2>
-
-                <input id="modelURL"
-                    value="https://teachablemachine.withgoogle.com/models/8PFBVe19l/"
-                    placeholder="Pega aquí la URL del modelo">
-
-                <button onclick="cargarModelo()">
-                    Cargar Modelo
-                </button>
-
-                <div class="status">
-                    <span id="modelDot" class="dot"></span>
-                    <span id="modelStatus">Modelo no cargado</span>
-                </div>
-
-            </div>
-
-            <div class="card">
-
-                <h2>🔵 IdeaBoard</h2>
-
-                <button onclick="conectarBLE()">
-                    Conectar Bluetooth
-                </button>
-
-                <div class="status">
-                    <span id="bleDot" class="dot"></span>
-                    <span id="bleStatus">Desconectado</span>
-                </div>
-
+            <div class="status" id="modelStatus">
+                Modelo no cargado
             </div>
 
         </div>
 
-        <div class="card" style="margin-top:25px;">
+        <div class="card">
+
+            <h2>🔵 Bluetooth</h2>
+
+            <button onclick="conectarBLE()">
+                Conectar IdeaBoard
+            </button>
+
+            <div class="status" id="bleStatus">
+                Desconectado
+            </div>
+
+        </div>
+
+        <div class="card">
 
             <h2>📷 Cámara</h2>
 
@@ -279,13 +159,9 @@
 
         </div>
 
-        <div class="card prediction" style="margin-top:25px;">
+        <div class="card prediction">
 
-            <div class="emoji">🤔</div>
-
-            <div class="class-name" id="predictionClass">
-                ---
-            </div>
+            <h2 id="predictionClass">---</h2>
 
             <div class="confidence" id="predictionConfidence">
                 0%
@@ -299,35 +175,40 @@
 
         let model;
         let webcam;
-        let bleCharacteristic;
-
+        let bleCharacteristic = null;
         let ultimaClase = "";
 
         async function cargarModelo() {
 
             try {
 
-                let baseURL =
+                document.getElementById("modelStatus").innerHTML =
+                    "Cargando modelo...";
+
+                let url =
                     document.getElementById("modelURL")
-                        .value.trim();
+                    .value
+                    .trim();
 
-                baseURL = baseURL.replace(/\/+$/, '');
+                if (!url.endsWith("/"))
+                    url += "/";
 
-                const modelURL = baseURL + "/model.json";
-                const metadataURL = baseURL + "/metadata.json";
+                const modelURL = url + "model.json";
+                const metadataURL = url + "metadata.json";
 
-                model =
-                    await tmImage.load(
-                        modelURL,
-                        metadataURL
-                    );
+                console.log(modelURL);
+                console.log(metadataURL);
 
-                webcam =
-                    new tmImage.Webcam(
-                        400,
-                        300,
-                        true
-                    );
+                model = await tmImage.load(
+                    modelURL,
+                    metadataURL
+                );
+
+                webcam = new tmImage.Webcam(
+                    400,
+                    300,
+                    true
+                );
 
                 await webcam.setup();
                 await webcam.play();
@@ -345,11 +226,7 @@
                 document.getElementById(
                     "modelStatus"
                 ).innerHTML =
-                    "Modelo cargado";
-
-                document.getElementById(
-                    "modelDot"
-                ).classList.add("green");
+                    "✅ Modelo cargado correctamente";
 
                 window.requestAnimationFrame(loop);
 
@@ -362,22 +239,20 @@
                 document.getElementById(
                     "modelStatus"
                 ).innerHTML =
-                    "Error cargando modelo";
-
-                document.getElementById(
-                    "modelDot"
-                ).classList.add("red");
+                    "❌ Error cargando modelo";
 
                 alert(
-                    "Error:\n\n" +
+                    "Error cargando modelo:\n\n" +
                     error.message
                 );
-
             }
 
         }
 
         async function loop() {
+
+            if (!model || !webcam)
+                return;
 
             webcam.update();
 
@@ -386,15 +261,15 @@
                     webcam.canvas
                 );
 
-            let mejor = "";
-            let prob = 0;
+            let mejorClase = "";
+            let mejorProb = 0;
 
             prediction.forEach(p => {
 
-                if (p.probability > prob) {
+                if (p.probability > mejorProb) {
 
-                    prob = p.probability;
-                    mejor = p.className;
+                    mejorProb = p.probability;
+                    mejorClase = p.className;
 
                 }
 
@@ -402,25 +277,25 @@
 
             document.getElementById(
                 "predictionClass"
-            ).innerHTML = mejor;
+            ).innerHTML = mejorClase;
 
             document.getElementById(
                 "predictionConfidence"
             ).innerHTML =
-                (prob * 100).toFixed(1) + "%";
+                (mejorProb * 100).toFixed(1) + "%";
 
             if (
-                mejor !== ultimaClase &&
-                prob > 0.8
+                mejorClase !== ultimaClase &&
+                mejorProb > 0.8
             ) {
 
-                ultimaClase = mejor;
+                ultimaClase = mejorClase;
 
-                enviarBLE(mejor);
+                enviarBLE(mejorClase);
 
             }
 
-            requestAnimationFrame(loop);
+            window.requestAnimationFrame(loop);
 
         }
 
@@ -455,11 +330,7 @@
                 document.getElementById(
                     "bleStatus"
                 ).innerHTML =
-                    "IdeaBoard conectada";
-
-                document.getElementById(
-                    "bleDot"
-                ).classList.add("green");
+                    "✅ IdeaBoard conectada";
 
             }
 
@@ -470,11 +341,7 @@
                 document.getElementById(
                     "bleStatus"
                 ).innerHTML =
-                    "Error Bluetooth";
-
-                document.getElementById(
-                    "bleDot"
-                ).classList.add("red");
+                    "❌ Error Bluetooth";
 
             }
 
@@ -487,8 +354,7 @@
 
             try {
 
-                const encoder =
-                    new TextEncoder();
+                const encoder = new TextEncoder();
 
                 await bleCharacteristic.writeValue(
                     encoder.encode(texto + "\n")
