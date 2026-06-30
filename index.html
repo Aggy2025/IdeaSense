@@ -6,15 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teachable IdeaSense</title>
 
-    <!-- TensorFlow -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-
-    <!-- Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
-
-    <!-- Fuente -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
         rel="stylesheet">
@@ -25,72 +18,47 @@
         }
 
         body {
-
             margin: 0;
             min-height: 100vh;
-
             font-family: 'Poppins', sans-serif;
-
-            background:
-                linear-gradient(135deg,
-                    #0f172a,
-                    #1e293b,
-                    #2563eb);
-
+            background: linear-gradient(135deg, #0f172a, #1e293b, #2563eb);
             color: white;
         }
 
         .container {
-
             max-width: 1200px;
             margin: auto;
             padding: 30px;
-
         }
 
         .hero {
-
             text-align: center;
-            margin-bottom: 30px;
-
+            margin-bottom: 40px;
         }
 
         .hero h1 {
-
             font-size: 3rem;
             margin-bottom: 10px;
-
         }
 
         .hero p {
-
-            opacity: .8;
-
-        }
-
-        .grid {
-
-            display: grid;
-            gap: 25px;
-
-            grid-template-columns:
-                repeat(auto-fit, minmax(350px, 1fr));
-
+            opacity: .85;
+            font-size: 1.1rem;
         }
 
         .card {
-
-            background: rgba(255, 255, 255, .1);
-
+            background: rgba(255,255,255,.1);
             backdrop-filter: blur(15px);
-
             border-radius: 25px;
-
             padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.2);
+        }
 
-            box-shadow:
-                0 10px 30px rgba(0, 0, 0, .2);
-
+        .grid {
+            display: grid;
+            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(350px,1fr));
         }
 
         h2 {
@@ -98,108 +66,71 @@
         }
 
         input {
-
             width: 100%;
             padding: 15px;
-
             border: none;
-
             border-radius: 15px;
-
             font-size: 16px;
-
             margin-top: 10px;
         }
 
         button {
-
             margin-top: 15px;
-
             padding: 15px 25px;
-
             border: none;
-
             border-radius: 15px;
-
             background: white;
-
             color: #2563eb;
-
             font-size: 16px;
-
             font-weight: bold;
-
             cursor: pointer;
-
             transition: .3s;
         }
 
         button:hover {
-
             transform: translateY(-3px);
-
         }
 
         #webcam-container {
-
             display: flex;
             justify-content: center;
             margin-top: 15px;
-
         }
 
         canvas {
-
             border-radius: 20px;
             max-width: 100%;
-
         }
 
         .prediction {
-
             text-align: center;
-            margin-top: 20px;
-
         }
 
         .emoji {
-
             font-size: 5rem;
-
         }
 
         .class-name {
-
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: bold;
-
         }
 
         .confidence {
-
             font-size: 1.3rem;
             opacity: .8;
-
         }
 
         .status {
-
             margin-top: 15px;
-            font-size: 1.1rem;
         }
 
         .dot {
-
             display: inline-block;
-
             width: 12px;
             height: 12px;
-
             border-radius: 50%;
             margin-right: 10px;
-
             background: orange;
-
         }
 
         .green {
@@ -209,6 +140,77 @@
         .red {
             background: #ff5252;
         }
+
+        .tools-section {
+            margin-bottom: 40px;
+        }
+
+        .tools-section h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(280px,1fr));
+            gap: 25px;
+        }
+
+        .tool-card {
+
+            background: rgba(255,255,255,.1);
+            backdrop-filter: blur(15px);
+
+            border-radius: 25px;
+
+            padding: 30px;
+
+            text-align: center;
+
+            box-shadow:
+                0 10px 30px rgba(0,0,0,.2);
+
+            transition: .3s;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .tool-icon {
+            font-size: 4rem;
+        }
+
+        .tool-card p {
+            opacity: .85;
+        }
+
+        .tool-card a {
+
+            display: inline-block;
+
+            margin-top: 20px;
+
+            text-decoration: none;
+
+            background: white;
+
+            color: #2563eb;
+
+            padding: 14px 22px;
+
+            border-radius: 15px;
+
+            font-weight: bold;
+        }
+
+        .workflow {
+            text-align: center;
+            line-height: 2;
+            font-size: 1.1rem;
+        }
+
     </style>
 
 </head>
@@ -218,12 +220,83 @@
     <div class="container">
 
         <div class="hero">
-
             <h1>🤖 Teachable IdeaSense</h1>
-
             <p>
-                Entrena un modelo con Teachable Machine y llévalo al mundo físico.
+                Entrena modelos de IA y conéctalos con tu IdeaBoard + IdeaSense.
             </p>
+        </div>
+
+        <div class="card workflow">
+
+            <h2>🚀 Flujo de Trabajo</h2>
+
+            1️⃣ Entrena un modelo<br>
+            ⬇<br>
+            2️⃣ Copia la URL del modelo<br>
+            ⬇<br>
+            3️⃣ Carga el modelo aquí<br>
+            ⬇<br>
+            4️⃣ Conecta tu IdeaBoard por Bluetooth
+
+        </div>
+
+        <div class="tools-section">
+
+            <h2>🚀 Crear y Programar</h2>
+
+            <div class="tools-grid">
+
+                <div class="tool-card">
+                    <div class="tool-icon">🤖</div>
+
+                    <h3>Entrenar IA</h3>
+
+                    <p>
+                        Crea modelos con imágenes, sonidos o poses usando Teachable Machine.
+                    </p>
+
+                    <a href="https://teachablemachine.withgoogle.com/"
+                        target="_blank">
+                        Abrir Teachable Machine
+                    </a>
+
+                </div>
+
+                <div class="tool-card">
+
+                    <div class="tool-icon">🧩</div>
+
+                    <h3>Programar por Bloques</h3>
+
+                    <p>
+                        Programa la IdeaBoard usando bloques visuales.
+                    </p>
+
+                    <a href="https://ideascratch.crcibernetica.com/"
+                        target="_blank">
+                        Abrir IdeaScratch
+                    </a>
+
+                </div>
+
+                <div class="tool-card">
+
+                    <div class="tool-icon">🐍</div>
+
+                    <h3>Programar con Python</h3>
+
+                    <p>
+                        Programa la IdeaBoard usando CircuitPython.
+                    </p>
+
+                    <a href="https://ideacode.crcibernetica.com/"
+                        target="_blank">
+                        Abrir IdeaCode
+                    </a>
+
+                </div>
+
+            </div>
 
         </div>
 
@@ -265,7 +338,7 @@
 
         </div>
 
-        <div class="card" style="margin-top:25px;">
+        <div class="card">
 
             <h2>📷 Cámara</h2>
 
@@ -273,7 +346,7 @@
 
         </div>
 
-        <div class="card prediction" style="margin-top:25px;">
+        <div class="card prediction">
 
             <div class="emoji">🎯</div>
 
@@ -291,8 +364,6 @@
 
     <script>
 
-        console.log("tmImage:", tmImage);
-
         let model;
         let webcam;
         let bleCharacteristic;
@@ -305,15 +376,12 @@
 
                 let baseURL =
                     document.getElementById("modelURL")
-                        .value.trim();
+                    .value.trim();
 
                 baseURL = baseURL.replace(/\/+$/, '');
 
                 const modelURL = baseURL + "/model.json";
                 const metadataURL = baseURL + "/metadata.json";
-
-                console.log("Modelo:", modelURL);
-                console.log("Metadata:", metadataURL);
 
                 model =
                     await tmImage.load(
@@ -332,69 +400,39 @@
                 await webcam.play();
 
                 const contenedor =
-                    document.getElementById(
-                        "webcam-container"
-                    );
+                    document.getElementById("webcam-container");
 
                 contenedor.innerHTML = "";
-                contenedor.appendChild(
-                    webcam.canvas
-                );
+                contenedor.appendChild(webcam.canvas);
 
-                document.getElementById(
-                    "modelStatus"
-                ).innerHTML =
-                    "Modelo cargado";
+                document.getElementById("modelStatus")
+                    .innerHTML = "Modelo cargado";
 
-                document.getElementById(
-                    "modelDot"
-                ).classList.remove("red");
-
-                document.getElementById(
-                    "modelDot"
-                ).classList.add("green");
+                document.getElementById("modelDot")
+                    .classList.add("green");
 
                 window.requestAnimationFrame(loop);
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(error);
 
-                document.getElementById(
-                    "modelStatus"
-                ).innerHTML =
-                    "Error cargando modelo";
+                document.getElementById("modelStatus")
+                    .innerHTML = "Error cargando modelo";
 
-                document.getElementById(
-                    "modelDot"
-                ).classList.remove("green");
+                document.getElementById("modelDot")
+                    .classList.add("red");
 
-                document.getElementById(
-                    "modelDot"
-                ).classList.add("red");
-
-                alert(
-                    "Error cargando modelo:\n\n" +
-                    error.message
-                );
-
+                alert(error.message);
             }
-
         }
 
         async function loop() {
 
-            if (!model || !webcam)
-                return;
-
             webcam.update();
 
             const prediction =
-                await model.predict(
-                    webcam.canvas
-                );
+                await model.predict(webcam.canvas);
 
             let mejor = "";
             let prob = 0;
@@ -402,36 +440,26 @@
             prediction.forEach(p => {
 
                 if (p.probability > prob) {
-
                     prob = p.probability;
                     mejor = p.className;
-
                 }
 
             });
 
-            document.getElementById(
-                "predictionClass"
-            ).innerHTML = mejor;
+            document.getElementById("predictionClass")
+                .innerHTML = mejor;
 
-            document.getElementById(
-                "predictionConfidence"
-            ).innerHTML =
-                (prob * 100).toFixed(1) + "%";
+            document.getElementById("predictionConfidence")
+                .innerHTML = (prob * 100).toFixed(1) + "%";
 
-            if (
-                mejor !== ultimaClase &&
-                prob > 0.80
-            ) {
+            if (mejor !== ultimaClase && prob > 0.8) {
 
                 ultimaClase = mejor;
-
                 enviarBLE(mejor);
 
             }
 
             requestAnimationFrame(loop);
-
         }
 
         async function conectarBLE() {
@@ -446,11 +474,9 @@
                         optionalServices: [
                             '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
                         ]
-
                     });
 
-                const server =
-                    await device.gatt.connect();
+                const server = await device.gatt.connect();
 
                 const service =
                     await server.getPrimaryService(
@@ -462,58 +488,41 @@
                         '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
                     );
 
-                document.getElementById(
-                    "bleStatus"
-                ).innerHTML =
-                    "IdeaBoard conectada";
+                document.getElementById("bleStatus")
+                    .innerHTML = "IdeaBoard conectada";
 
-                document.getElementById(
-                    "bleDot"
-                ).classList.add("green");
+                document.getElementById("bleDot")
+                    .classList.add("green");
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(error);
 
-                document.getElementById(
-                    "bleStatus"
-                ).innerHTML =
-                    "Error Bluetooth";
+                document.getElementById("bleStatus")
+                    .innerHTML = "Error Bluetooth";
 
-                document.getElementById(
-                    "bleDot"
-                ).classList.add("red");
-
+                document.getElementById("bleDot")
+                    .classList.add("red");
             }
-
         }
 
         async function enviarBLE(texto) {
 
-            if (!bleCharacteristic)
-                return;
+            if (!bleCharacteristic) return;
 
             try {
 
-                const encoder =
-                    new TextEncoder();
+                const encoder = new TextEncoder();
 
                 await bleCharacteristic.writeValue(
                     encoder.encode(texto + "\n")
                 );
 
-                console.log("BLE:", texto);
-
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.log(error);
 
             }
-
         }
 
     </script>
